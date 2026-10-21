@@ -1,0 +1,12 @@
+{
+  "domain": "kospel_ppe4",
+  "name": "Kospel PPE4",
+  "codeowners": ["@karniv00l"],
+  "config_flow": true,
+  "documentation": "https://github.com/karniv00l/ha-kospel-ppe4",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/karniv00l/ha-kospel-ppe4/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

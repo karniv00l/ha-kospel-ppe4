@@ -1,0 +1,41 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kospel PPE4",
+        "description": "Enter the IP address of your PPE4 Wi-Fi module.",
+        "data": {
+          "host": "Host / IP address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the heater at that address.",
+      "not_ppe4": "That host responded, but does not look like a Kospel PPE4."
+    },
+    "abort": {
+      "already_configured": "This heater is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "intake_temp": { "name": "Intake temperature" },
+      "outlet_temp": { "name": "Outlet temperature" },
+      "internal_temp": { "name": "Internal temperature" },
+      "power": { "name": "Power" },
+      "flow_rate": { "name": "Flow rate" },
+      "energy": { "name": "Energy" },
+      "water": { "name": "Water" },
+      "power_installed": { "name": "Installed power" },
+      "heater_power": { "name": "Heater power" }
+    },
+    "select": {
+      "profile": { "name": "Active profile" }
+    },
+    "number": {
+      "profile_1": { "name": "Profile 1 temperature" },
+      "profile_2": { "name": "Profile 2 temperature" },
+      "profile_3": { "name": "Profile 3 temperature" }
+    }
+  }
+}
