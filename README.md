@@ -6,9 +6,14 @@ A local-polling Home Assistant integration for the **Kospel PPE4** instantaneous
 (flow-through) electric water heater, talking directly to its Wi-Fi module over
 the LAN. No cloud, no account.
 
-> Reverse-engineered from a live unit (`ppe4_000XXXXX`). The PPE4 Wi-Fi module
-> is **not** the same as Kospel's C.MI module (EKCO/EKD boilers) — it speaks a
-> different, MODBUS-over-HTTP API. See [docs/protocol.md](docs/protocol.md).
+> Reverse-engineered from a live unit. The PPE4 Wi-Fi module is **not** the same
+> as Kospel's C.MI module (EKCO/EKD boilers) — it speaks a different,
+> MODBUS-over-HTTP API. See [docs/protocol.md](docs/protocol.md).
+
+> [!WARNING]
+> This is an unofficial, community-maintained integration and is not affiliated
+> with or endorsed by Kospel. It controls a mains electric water heater — use it
+> at your own responsibility.
 
 ## Features
 
@@ -96,11 +101,6 @@ Assistant can track usage over time.
     logs:
       custom_components.kospel_ppe4: debug
   ```
-
-## Disclaimer
-
-Unofficial. Not affiliated with Kospel. Use at your own risk — it controls a
-mains water heater.
 
 ## Acknowledgements
 
