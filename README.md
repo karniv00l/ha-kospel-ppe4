@@ -59,18 +59,28 @@ Assistant can track usage over time.
 
 - **Energy dashboard:** Settings → Dashboards → Energy → *Individual devices* →
   add **Kospel PPE4 Energy**. (Optional: add **Water** under the *Water* source.)
-- **Per-day/week/month totals:** add a Utility Meter helper in
-  `configuration.yaml`:
+- **Per-day/week/month totals:** add a Utility Meter helper as a **top-level**
+  block in `configuration.yaml` (then restart HA — `utility_meter` needs a full
+  restart). Verify the source entity IDs first in *Developer Tools → States*
+  (filter `kospel_ppe4`):
 
   ```yaml
   utility_meter:
     ppe4_energy_daily:
       source: sensor.kospel_ppe4_energy
       cycle: daily
+    ppe4_energy_monthly:
+      source: sensor.kospel_ppe4_energy
+      cycle: monthly
     ppe4_water_daily:
       source: sensor.kospel_ppe4_water
       cycle: daily
+    ppe4_water_monthly:
+      source: sensor.kospel_ppe4_water
+      cycle: monthly
   ```
+
+  This creates `sensor.ppe4_energy_daily`, `sensor.ppe4_water_monthly`, etc.
 
 > These totals are derived by integrating the live power (reg 1138) and flow
 > (reg 1139) at the 15 s poll interval, so very short draws may be slightly
