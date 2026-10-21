@@ -4,7 +4,7 @@ A local-polling Home Assistant integration for the **Kospel PPE4** instantaneous
 (flow-through) electric water heater, talking directly to its Wi-Fi module over
 the LAN. No cloud, no account.
 
-> Reverse-engineered from a live unit (`ppe4_00027514`). The PPE4 Wi-Fi module
+> Reverse-engineered from a live unit (`ppe4_000XXXXX`). The PPE4 Wi-Fi module
 > is **not** the same as Kospel's C.MI module (EKCO/EKD boilers) — it speaks a
 > different, MODBUS-over-HTTP API. See [docs/protocol.md](docs/protocol.md).
 
@@ -45,12 +45,55 @@ Or copy `custom_components/kospel_ppe4/` into your HA `config/custom_components/
 | Internal temperature | 1136 | Diagnostic (÷10 °C) |
 | Installed / heater power | 1143 / 1144 | W (diagnostic) |
 
+## Energy & water usage
+
+The **Energy** (kWh) and **Water** (l) sensors are `total_increasing`, so Home
+Assistant can track usage over time.
+
+- **Energy dashboard:** Settings → Dashboards → Energy → *Individual devices* →
+  add **Kospel PPE4 Energy**. (Optional: add **Water** under the *Water* source.)
+- **Per-day/week/month totals:** add a Utility Meter helper in
+  `configuration.yaml`:
+
+  ```yaml
+  utility_meter:
+    ppe4_energy_daily:
+      source: sensor.kospel_ppe4_energy
+      cycle: daily
+    ppe4_water_daily:
+      source: sensor.kospel_ppe4_water
+      cycle: daily
+  ```
+
+> These totals are derived by integrating the live power (reg 1138) and flow
+> (reg 1139) at the 15 s poll interval, so very short draws may be slightly
+> under-counted compared to the app's own counters.
+
 ## Status
 
 - **Reading: fully working and validated** against hardware.
 - **Writing (setpoint & profile): working and validated** — uses the heater's
   `POST /api/write` endpoint (captured from the official app).
   See [docs/protocol.md](docs/protocol.md#writing).
+
+## Troubleshooting
+
+- **"Failed to connect" when adding the integration** — Home Assistant can't
+  reach the heater. From HA's terminal: `curl http://<heater-ip>/api/1140/1`
+  should return `"status":"OK"`. Check the IP, and any VLAN/firewall between HA
+  and the heater.
+- **Heater IP keeps changing** — set a static DHCP lease for it on your router.
+- **Entities show "unavailable"** — the module dropped off Wi-Fi; it recovers on
+  the next successful poll. Check the heater's Wi-Fi signal icon in the app.
+- **"logo not available" on the device page** — the brand icon isn't in
+  `home-assistant/brands` yet (cosmetic only). See [docs/brands.md](docs/brands.md).
+- **Enable debug logging** (`configuration.yaml`, then restart):
+
+  ```yaml
+  logger:
+    logs:
+      custom_components.kospel_ppe4: debug
+  ```
 
 ## Disclaimer
 

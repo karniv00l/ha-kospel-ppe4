@@ -24,7 +24,7 @@ CONF_HOST: Final = "host"
 # e.g. 420 == 42.0 degC. A few sensor slots use 0xFFFF (65535) / 0xAAAA (43690)
 # as "unused" / "not present" markers.
 #
-# The map below was reverse-engineered from a live PPE4 (serial ppe4_00027514).
+# The map below was reverse-engineered from a live PPE4 (serial ppe4_000XXXXX).
 # Addresses are confirmed where noted; others are best-effort and exposed as
 # diagnostic sensors so they can be identified over time.
 

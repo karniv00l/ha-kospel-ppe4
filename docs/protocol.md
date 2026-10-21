@@ -1,6 +1,6 @@
 # Kospel PPE4 Wi-Fi module — protocol notes
 
-Reverse-engineered from a live PPE4 (`ppe4_00027514`, firmware served the
+Reverse-engineered from a live PPE4 (`ppe4_000XXXXX`, firmware served the
 "KOSPEL PPE4 Wi-Fi configuration" page at `/`).
 
 ## Transport
