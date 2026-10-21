@@ -1,3 +1,5 @@
+<img src="docs/logo/icon.png" width="96" align="right" alt="Kospel PPE4 logo"/>
+
 # Kospel PPE4 — Home Assistant integration
 
 A local-polling Home Assistant integration for the **Kospel PPE4** instantaneous

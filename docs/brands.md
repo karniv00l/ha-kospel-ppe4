@@ -5,24 +5,44 @@ Home Assistant pulls integration icons/logos from the central
 Until `kospel_ppe4` is added there, HA shows a placeholder. This is purely
 cosmetic and does not affect functionality.
 
+## Ready-made assets
+
+This repo already ships a fitting icon in [`docs/logo/`](logo/):
+
+- [`icon.svg`](logo/icon.svg) — editable vector source (orange flame + water drop)
+- [`icon.png`](logo/icon.png) — 256x256, transparent
+- [`icon@2x.png`](logo/icon@2x.png) — 512x512, transparent
+
+To re-render after editing the SVG (macOS):
+
+```bash
+qlmanage -t -s 512 -o docs/logo docs/logo/icon.svg
+magick docs/logo/icon.svg.png -alpha set -fuzz 10% \
+  -fill none -floodfill +0+0 white -fill none -floodfill +511+0 white \
+  -fill none -floodfill +0+511 white -fill none -floodfill +511+511 white \
+  docs/logo/icon@2x.png
+magick docs/logo/icon@2x.png -resize 256x256 docs/logo/icon.png
+rm docs/logo/icon.svg.png
+```
+
 ## What to submit
 
-In a fork of `home-assistant/brands`, create:
+In a fork of `home-assistant/brands`, copy the PNGs to:
 
 ```
-custom_integrations/kospel_ppe4/icon.png        # 256x256, square, transparent PNG
-custom_integrations/kospel_ppe4/icon@2x.png     # 512x512
-custom_integrations/kospel_ppe4/logo.png        # optional, wordmark (max 512 high)
-custom_integrations/kospel_ppe4/logo@2x.png     # optional
+custom_integrations/kospel_ppe4/icon.png        # <- docs/logo/icon.png   (256x256)
+custom_integrations/kospel_ppe4/icon@2x.png     # <- docs/logo/icon@2x.png (512x512)
 ```
 
 Requirements (see the brands repo README):
 
-- **Square** `icon.png` with a **transparent** background, trimmed of padding.
-- `icon.png` = 256x256, `icon@2x.png` = 512x512 (exactly 2x).
+- **Square**, **transparent** background, trimmed of padding (the shipped files
+  already satisfy this).
+- `icon@2x.png` is exactly 2x `icon.png`.
 - PNG, optimized (the repo CI runs an image check).
-- Use the Kospel brand mark (the orange flame logo). Make sure you have the right
-  to use it — brands are accepted as representing the manufacturer.
+
+This is an **original** mark, not Kospel's trademarked logo, so there are no brand
+rights concerns in submitting it.
 
 ## Submit
 

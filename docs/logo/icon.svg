@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="flame" x1="256" y1="40" x2="256" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFB24D"/>
+      <stop offset="0.45" stop-color="#F26A21"/>
+      <stop offset="1" stop-color="#D62828"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="256" y1="196" x2="256" y2="392" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8FE3FF"/>
+      <stop offset="0.5" stop-color="#2CA6E0"/>
+      <stop offset="1" stop-color="#1565C0"/>
+    </linearGradient>
+  </defs>
+  <!-- flame -->
+  <path fill="url(#flame)" d="M256 40
+    c -20 70 -120 140 -120 266
+    a 120 120 0 1 0 240 0
+    C 376 180 300 120 256 40 Z"/>
+  <!-- water drop (negative gap + blue fill) -->
+  <path fill="#ffffff" d="M256 188
+    c -12 48 -70 86 -70 150
+    a 70 70 0 1 0 140 0
+    c 0 -64 -58 -102 -70 -150 Z"/>
+  <path fill="url(#drop)" d="M256 206
+    c -10 42 -58 74 -58 128
+    a 58 58 0 1 0 116 0
+    c 0 -54 -48 -86 -58 -128 Z"/>
+</svg>
