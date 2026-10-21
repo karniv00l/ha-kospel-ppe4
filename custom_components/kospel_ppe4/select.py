@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import KospelPPE4ConfigEntry
-from .const import PROFILE_COUNT, REG_ACTIVE_PROFILE
+from .const import PROFILE_COUNT
 from .coordinator import KospelPPE4Coordinator
 from .entity import KospelPPE4Entity
 
@@ -35,7 +35,7 @@ class KospelPPE4ProfileSelect(KospelPPE4Entity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        idx = self.coordinator.data.get(REG_ACTIVE_PROFILE)
+        idx = self.coordinator.active_profile
         if idx is None or not 0 <= idx < PROFILE_COUNT:
             return None
         return PROFILE_OPTIONS[idx]

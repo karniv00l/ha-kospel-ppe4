@@ -63,9 +63,14 @@ registers while hot water flowed:
 
 Notes:
 
-- The **active setpoint** that drives heating is `1391`. Selecting a profile
-  copies that profile's preset (`1392 + index`) into `1391`; the main dial edits
-  `1391` directly.
+- The **actual heating target is `1391`** (the working setpoint / main dial).
+  Proven empirically: with Profile 1 *highlighted* (`1390`=0, preset `1392`=42 °C)
+  but `1391`=45 °C, running water heated the outlet to **45 °C**, not 42 °C.
+- Register `1390` only marks which profile is *highlighted* in the app — it does
+  **not** change the target, and the app does not copy a preset into `1391` when
+  you select a profile. This integration therefore treats the "active profile" as
+  the one whose preset equals `1391`, and when you select a profile it copies that
+  preset into `1391` so the choice actually takes effect.
 - **Daily/weekly/yearly energy (kWh) and water (l) totals** are shown on the
   app's *Statystyki zużycia* screen (with cost in zł), but are **not** in the
   polled register region — they appear to come from a separate history endpoint.
