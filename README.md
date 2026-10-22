@@ -102,8 +102,10 @@ Assistant can track usage over time.
 - **Heater IP keeps changing** — set a static DHCP lease for it on your router.
 - **Entities show "unavailable"** — the module dropped off Wi-Fi; it recovers on
   the next successful poll. Check the heater's Wi-Fi signal icon in the app.
-- **"logo not available" on the device page** — the brand icon isn't in
-  `home-assistant/brands` yet (cosmetic only). See [docs/brands.md](docs/brands.md).
+- **No brand icon on the device page** — the icon ships inside the integration
+  (`custom_components/kospel_ppe4/brand/`) and needs Home Assistant **2026.3.0
+  or newer**; on older versions the icon is simply absent (cosmetic only). See
+  [docs/brands.md](docs/brands.md).
 - **Enable debug logging** (`configuration.yaml`, then restart):
 
   ```yaml
