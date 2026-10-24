@@ -14,7 +14,6 @@ from .const import (
     MIN_TEMP,
     PROFILE_COUNT,
     REG_MAX_TEMP,
-    REG_SETPOINT,
     TEMP_STEP,
 )
 from .coordinator import KospelPPE4Coordinator
@@ -28,7 +27,7 @@ async def async_setup_entry(
 ) -> None:
     coordinator = entry.runtime_data
     async_add_entities(
-        KospelPPE4ProfileNumber(coordinator, i) for i in range(PROFILE_COUNT)
+        KospelPPE4ProfileNumber(coordinator, i) for i in range(1, PROFILE_COUNT + 1)
     )
 
 
@@ -43,10 +42,9 @@ class KospelPPE4ProfileNumber(KospelPPE4Entity, NumberEntity):
 
     def __init__(self, coordinator: KospelPPE4Coordinator, profile: int) -> None:
         super().__init__(coordinator)
-        self._profile = profile
         self._register = coordinator.profile_setpoint_register(profile)
-        self._attr_translation_key = f"profile_{profile + 1}"
-        self._attr_unique_id = f"{coordinator.serial}_profile_{profile + 1}"
+        self._attr_translation_key = f"profile_{profile}"
+        self._attr_unique_id = f"{coordinator.serial}_profile_{profile}"
 
     @property
     def native_max_value(self) -> float:
@@ -59,9 +57,7 @@ class KospelPPE4ProfileNumber(KospelPPE4Entity, NumberEntity):
         return None if raw is None else raw / DECI
 
     async def async_set_native_value(self, value: float) -> None:
-        raw = int(round(value * DECI))
-        values = {self._register: raw}
-        # If this profile is the active one, keep the working setpoint in sync.
-        if self._profile == self.coordinator.active_profile:
-            values[REG_SETPOINT] = raw
-        await self.coordinator.async_write_and_refresh(values)
+        # If this profile is selected, the heater picks up the new preset itself.
+        await self.coordinator.async_write_and_refresh(
+            {self._register: int(round(value * DECI))}
+        )

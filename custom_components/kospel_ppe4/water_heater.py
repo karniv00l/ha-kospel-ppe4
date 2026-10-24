@@ -19,6 +19,7 @@ from .const import (
     MIN_TEMP,
     REG_MAX_TEMP,
     REG_POWER,
+    REG_TARGET,
     REG_TEMP_OUTLET,
     TEMP_STEP,
 )
@@ -64,14 +65,12 @@ class KospelPPE4WaterHeater(KospelPPE4Entity, WaterHeaterEntity):
 
     @property
     def target_temperature(self) -> float | None:
-        raw = self.coordinator.data.get(self.coordinator.target_temp_register)
+        """What the heater is actually aiming for (manual setpoint or profile)."""
+        raw = self.coordinator.data.get(REG_TARGET)
         return None if raw is None else raw / DECI
 
     async def async_set_temperature(self, **kwargs: float) -> None:
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
-        value = int(round(temperature * DECI))
-        await self.coordinator.async_write_and_refresh(
-            {self.coordinator.target_temp_register: value}
-        )
+        await self.coordinator.async_set_manual_target(int(round(temperature * DECI)))

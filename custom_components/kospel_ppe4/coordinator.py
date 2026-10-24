@@ -18,6 +18,7 @@ from .const import (
     LIVE_BLOCK_COUNT,
     LIVE_BLOCK_START,
     PROFILE_COUNT,
+    PROFILE_MANUAL,
     REG_ACTIVE_PROFILE,
     REG_PROFILE_BASE,
     REG_SERIAL_SUFFIX,
@@ -83,34 +84,16 @@ class KospelPPE4Coordinator(DataUpdateCoordinator[dict[int, int]]):
         return self._serial or f"ppe4_{self.client.host}"
 
     @property
-    def working_setpoint(self) -> int | None:
-        """The heater's actual target temperature register value (deci-degrees)."""
-        return self.data.get(REG_SETPOINT) if self.data else None
-
-    @property
     def active_profile(self) -> int | None:
-        """The profile whose preset matches the current target, or None.
-
-        On this device the selected-profile register (1390) only *highlights* a
-        preset; the real target is the working setpoint (1391). So a profile is
-        "active" when its stored preset equals the working setpoint.
-        """
-        sp = self.working_setpoint
-        if sp is None:
+        """Selected profile 1..PROFILE_COUNT, PROFILE_MANUAL (0), or None."""
+        profile = self.data.get(REG_ACTIVE_PROFILE) if self.data else None
+        if profile is None or not 0 <= profile <= PROFILE_COUNT:
             return None
-        for i in range(PROFILE_COUNT):
-            if self.data.get(self.profile_setpoint_register(i)) == sp:
-                return i
-        return None
+        return profile
 
     def profile_setpoint_register(self, profile: int) -> int:
-        """Return the register that holds a given profile's preset."""
-        return REG_PROFILE_BASE + profile
-
-    @property
-    def target_temp_register(self) -> int:
-        """Register holding the active working setpoint ("Ustawienie temp.")."""
-        return REG_SETPOINT
+        """Return the register that holds a given (1-based) profile's preset."""
+        return REG_PROFILE_BASE + profile - 1
 
     async def async_write_and_refresh(self, values: dict[int, int]) -> None:
         """Write one or more registers and refresh so the UI reflects it."""
@@ -122,9 +105,16 @@ class KospelPPE4Coordinator(DataUpdateCoordinator[dict[int, int]]):
         await self.async_request_refresh()
 
     async def async_select_profile(self, profile: int) -> None:
-        """Select a profile and copy its preset into the working setpoint."""
-        preset = self.data.get(self.profile_setpoint_register(profile))
-        values = {REG_ACTIVE_PROFILE: profile}
-        if preset is not None:
-            values[REG_SETPOINT] = preset
-        await self.async_write_and_refresh(values)
+        """Select a profile (1..3), or PROFILE_MANUAL to use the manual setpoint."""
+        await self.async_write_and_refresh({REG_ACTIVE_PROFILE: profile})
+
+    async def async_set_manual_target(self, value: int) -> None:
+        """Switch to manual mode and aim for `value` (deci-degrees).
+
+        Writing only the setpoint would have no effect while a profile is
+        selected, and editing the active profile's preset would silently change
+        a saved profile.
+        """
+        await self.async_write_and_refresh(
+            {REG_ACTIVE_PROFILE: PROFILE_MANUAL, REG_SETPOINT: value}
+        )

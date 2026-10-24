@@ -17,12 +17,14 @@ the LAN. No cloud, no account.
 
 ## Features
 
-- **Water heater** entity: outlet temperature + target (working) setpoint.
+- **Water heater** entity: outlet temperature and the temperature the heater
+  is aiming for. Setting a temperature switches the heater to manual mode.
 - **Sensors**: intake (Tin) & outlet (Tout) water temperature, live power draw
   (W), flow rate (l/min), plus the heater's own daily **energy (kWh)** and
   **water (l)** counters (the same numbers as the app's statistics) for the
   Home Assistant Energy dashboard.
-- **Active profile** selector (Profile 1–3) and editable **profile presets**.
+- **Active profile** selector (Manual, Profile 1–3) and editable **profile
+  presets**.
 - Diagnostic sensors: internal temperature, installed / configured heater power.
 - Local polling every 15 s, no authentication required.
 
@@ -42,8 +44,8 @@ Or copy `custom_components/kospel_ppe4/` into your HA `config/custom_components/
 | Entity | Register(s) | Notes |
 |--------|-------------|-------|
 | Water heater – current temp | 1135 | Outlet water temp *Tout* (÷10 °C) |
-| Water heater – target temp | 1391 | Active working setpoint (÷10 °C) |
-| Active profile | 1390 | 0-based index → *Profile 1/2/3* |
+| Water heater – target temp | 1140 | Temperature the heater aims for (÷10 °C); setting it writes 1390 = 0 and 1391 (manual mode) |
+| Active profile | 1390 | 0 = *Manual* (uses 1391), 1–3 = *Profile 1/2/3* |
 | Profile 1/2/3 temperature | 1392 / 1393 / 1394 | Editable presets (÷10 °C) |
 | Intake temperature | 1134 | *Tin* (÷10 °C) |
 | Outlet temperature | 1135 | *Tout* (÷10 °C) |

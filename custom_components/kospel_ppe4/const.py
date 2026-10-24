@@ -35,6 +35,7 @@ REG_TEMP_OUTLET: Final = 1135  # confirmed: outlet (heated) water temp, x10 degC
 REG_TEMP_INTERNAL: Final = 1136  # internal/ambient probe, x10 degC (~22, stable)
 REG_POWER: Final = 1138  # confirmed: instantaneous power draw ("Aktualna moc"), W
 REG_FLOW: Final = 1139  # flow rate ("Przepływ"), x10 L/min (0 when idle)
+REG_TARGET: Final = 1140  # confirmed: effective target temp the heater aims for (x10)
 
 # Installed-power configuration (not live draw) --------------------------------
 REG_POWER_INSTALLED: Final = 1143  # watts, model/nameplate power (e.g. 24000)
@@ -51,9 +52,12 @@ REG_RTC_SECOND: Final = 1152
 
 # Settings / setpoints --------------------------------------------------------
 REG_MAX_TEMP: Final = 1388  # confirmed: max temperature limit "Maksymalna temp." (x10)
-REG_ACTIVE_PROFILE: Final = 1390  # confirmed: selected profile index (0..2)
-REG_SETPOINT: Final = 1391  # confirmed: active working setpoint "Ustawienie temp." (x10)
+# 1390 selects what the heater aims for (reported in REG_TARGET):
+#   0 = manual, use REG_SETPOINT; 1..3 = use that profile's preset.
+REG_ACTIVE_PROFILE: Final = 1390  # confirmed: 0 = manual, 1..3 = Profil 1..3
+REG_SETPOINT: Final = 1391  # confirmed: manual setpoint "Ustawienie temp." (x10)
 REG_PROFILE_BASE: Final = 1392  # Profil 1/2/3 presets at BASE+0/1/2 (x10 degC)
+PROFILE_MANUAL: Final = 0
 PROFILE_COUNT: Final = 3
 
 # Usage counters (confirmed against the app's "Statystyki zużycia") ------------

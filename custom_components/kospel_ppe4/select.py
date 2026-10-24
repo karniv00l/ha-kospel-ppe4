@@ -11,7 +11,8 @@ from .const import PROFILE_COUNT
 from .coordinator import KospelPPE4Coordinator
 from .entity import KospelPPE4Entity
 
-PROFILE_OPTIONS = [f"Profile {i + 1}" for i in range(PROFILE_COUNT)]
+# Index == value of the selected-profile register: 0 = manual, 1..3 = profile.
+PROFILE_OPTIONS = ["Manual"] + [f"Profile {i}" for i in range(1, PROFILE_COUNT + 1)]
 
 
 async def async_setup_entry(
@@ -23,7 +24,7 @@ async def async_setup_entry(
 
 
 class KospelPPE4ProfileSelect(KospelPPE4Entity, SelectEntity):
-    """Selects the active temperature profile (1..3)."""
+    """Selects manual mode or one of the temperature profiles (1..3)."""
 
     _attr_translation_key = "profile"
     _attr_icon = "mdi:format-list-numbered"
@@ -36,9 +37,7 @@ class KospelPPE4ProfileSelect(KospelPPE4Entity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         idx = self.coordinator.active_profile
-        if idx is None or not 0 <= idx < PROFILE_COUNT:
-            return None
-        return PROFILE_OPTIONS[idx]
+        return None if idx is None else PROFILE_OPTIONS[idx]
 
     async def async_select_option(self, option: str) -> None:
         idx = PROFILE_OPTIONS.index(option)
