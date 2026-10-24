@@ -124,6 +124,10 @@ treats each reset as a new cycle and keeps the long-term totals.
   local HTTP API. The PPE4 uses a different (MODBUS-over-HTTP) protocol, so this
   integration shares no code with them, but credit is due for the inspiration.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
+
 ## License
 
 [MIT](LICENSE)
