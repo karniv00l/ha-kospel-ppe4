@@ -24,8 +24,8 @@
       "internal_temp": { "name": "Internal temperature" },
       "power": { "name": "Power" },
       "flow_rate": { "name": "Flow rate" },
-      "energy": { "name": "Energy" },
-      "water": { "name": "Water" },
+      "energy": { "name": "Energy today" },
+      "water": { "name": "Water today" },
       "power_installed": { "name": "Installed power" },
       "heater_power": { "name": "Heater power" }
     },

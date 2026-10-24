@@ -56,6 +56,20 @@ REG_SETPOINT: Final = 1391  # confirmed: active working setpoint "Ustawienie tem
 REG_PROFILE_BASE: Final = 1392  # Profil 1/2/3 presets at BASE+0/1/2 (x10 degC)
 PROFILE_COUNT: Final = 3
 
+# Usage counters (confirmed against the app's "Statystyki zużycia") ------------
+# The heater keeps its own daily totals, newest day first, as 32-bit values in
+# low/high word pairs. Each block must be read starting exactly at its first
+# address; a read that starts elsewhere returns an empty result.
+#   1448..1477: energy (Wh)       1450/1451 = today, 1452/1453 = yesterday, ...
+#   1576..1605: water (x10 L)     1578/1579 = today, 1580/1581 = yesterday, ...
+# Monthly totals live in 1520..1567 (energy) and 1648..1695 (water), two
+# registers per month from January.
+REG_ENERGY_TODAY: Final = 1450  # confirmed: Wh today (low word; high at +1)
+REG_WATER_TODAY: Final = 1578  # confirmed: x10 L today (low word; high at +1)
+ENERGY_DAY_BLOCK_START: Final = 1448
+WATER_DAY_BLOCK_START: Final = 1576
+DAY_BLOCK_COUNT: Final = 4  # header (2) + today (2)
+
 # Identity --------------------------------------------------------------------
 REG_SERIAL_SUFFIX: Final = 1276  # confirmed: numeric suffix of ppe4_000XXXXX
 

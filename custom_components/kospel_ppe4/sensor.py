@@ -6,7 +6,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from homeassistant.components.sensor import (
-    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -20,14 +19,14 @@ from homeassistant.const import (
     UnitOfVolume,
     UnitOfVolumeFlowRate,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.util import dt as dt_util
 
 from . import KospelPPE4ConfigEntry
 from .const import (
     DECI,
     MARKER_UNUSED,
+    REG_ENERGY_TODAY,
     REG_FLOW,
     REG_HEATER_POWER,
     REG_POWER,
@@ -35,6 +34,7 @@ from .const import (
     REG_TEMP_INTAKE,
     REG_TEMP_INTERNAL,
     REG_TEMP_OUTLET,
+    REG_WATER_TODAY,
 )
 from .coordinator import KospelPPE4Coordinator
 from .entity import KospelPPE4Entity
@@ -42,14 +42,20 @@ from .entity import KospelPPE4Entity
 
 @dataclass(frozen=True, kw_only=True)
 class KospelSensorDescription(SensorEntityDescription):
-    """Describes a PPE4 sensor sourced from one register."""
+    """Describes a PPE4 sensor sourced from one register (or a 32-bit pair)."""
 
     register: int
+    # For 32-bit values: the register holding the high word.
+    register_hi: int | None = None
     convert: Callable[[int], float] = float
 
 
 def _deci(v: int) -> float:
     return v / DECI
+
+
+def _wh_to_kwh(v: int) -> float:
+    return v / 1000.0
 
 
 SENSORS: tuple[KospelSensorDescription, ...] = (
@@ -91,6 +97,31 @@ SENSORS: tuple[KospelSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=1,
     ),
+    # The heater's own daily counters (what the app's statistics show). They
+    # reset at the heater's midnight; TOTAL_INCREASING treats that as a new
+    # meter cycle, so the Energy dashboard and utility meters keep summing.
+    KospelSensorDescription(
+        key="energy",
+        translation_key="energy",
+        register=REG_ENERGY_TODAY,
+        register_hi=REG_ENERGY_TODAY + 1,
+        convert=_wh_to_kwh,
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=2,
+    ),
+    KospelSensorDescription(
+        key="water",
+        translation_key="water",
+        register=REG_WATER_TODAY,
+        register_hi=REG_WATER_TODAY + 1,
+        convert=_deci,
+        device_class=SensorDeviceClass.WATER,
+        native_unit_of_measurement=UnitOfVolume.LITERS,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        suggested_display_precision=1,
+    ),
     KospelSensorDescription(
         key="internal_temp",
         translation_key="internal_temp",
@@ -127,35 +158,9 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
-    entities: list[SensorEntity] = [
+    async_add_entities(
         KospelPPE4Sensor(coordinator, description) for description in SENSORS
-    ]
-    # Derived running totals, integrated from the live power / flow readings.
-    entities.append(
-        KospelPPE4IntegratingSensor(
-            coordinator,
-            key="energy",
-            translation_key="energy",
-            source_register=REG_POWER,
-            source_scale=1.0,  # register is already watts
-            per_second=lambda w: w / 3_600_000.0,  # W -> kWh/s
-            device_class=SensorDeviceClass.ENERGY,
-            unit=UnitOfEnergy.KILO_WATT_HOUR,
-        )
     )
-    entities.append(
-        KospelPPE4IntegratingSensor(
-            coordinator,
-            key="water",
-            translation_key="water",
-            source_register=REG_FLOW,
-            source_scale=DECI,  # register is L/min x10
-            per_second=lambda lpm: lpm / 60.0,  # L/min -> L/s
-            device_class=SensorDeviceClass.WATER,
-            unit=UnitOfVolume.LITERS,
-        )
-    )
-    async_add_entities(entities)
 
 
 class KospelPPE4Sensor(KospelPPE4Entity, SensorEntity):
@@ -174,73 +179,13 @@ class KospelPPE4Sensor(KospelPPE4Entity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
-        raw = self.coordinator.data.get(self.entity_description.register)
+        description = self.entity_description
+        raw = self.coordinator.data.get(description.register)
         if raw is None or raw in MARKER_UNUSED:
             return None
-        return self.entity_description.convert(raw)
-
-
-class KospelPPE4IntegratingSensor(KospelPPE4Entity, RestoreSensor):
-    """A total_increasing sensor integrated from a live rate register.
-
-    Integrates the instantaneous power (for energy) or flow (for water volume)
-    over time using the trapezoidal rule between coordinator updates, and
-    restores its accumulated value across restarts.
-    """
-
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
-    _attr_suggested_display_precision = 2
-
-    def __init__(
-        self,
-        coordinator: KospelPPE4Coordinator,
-        *,
-        key: str,
-        translation_key: str,
-        source_register: int,
-        source_scale: float,
-        per_second: Callable[[float], float],
-        device_class: SensorDeviceClass,
-        unit: str,
-    ) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.serial}_{key}"
-        self._attr_translation_key = translation_key
-        self._attr_device_class = device_class
-        self._attr_native_unit_of_measurement = unit
-        self._source_register = source_register
-        self._source_scale = source_scale
-        self._per_second = per_second
-        self._total: float = 0.0
-        self._last_ts = None
-        self._last_rate: float | None = None
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if (last := await self.async_get_last_sensor_data()) is not None:
-            if last.native_value is not None:
-                self._total = float(last.native_value)
-        self._last_ts = dt_util.utcnow()
-
-    def _current_rate(self) -> float | None:
-        raw = self.coordinator.data.get(self._source_register)
-        if raw is None or raw in MARKER_UNUSED:
-            return None
-        return self._per_second(raw / self._source_scale)
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        now = dt_util.utcnow()
-        rate = self._current_rate()
-        if rate is not None and self._last_ts is not None:
-            dt = (now - self._last_ts).total_seconds()
-            if dt > 0:
-                prev = self._last_rate if self._last_rate is not None else rate
-                self._total += (rate + prev) / 2.0 * dt
-        self._last_ts = now
-        self._last_rate = rate
-        super()._handle_coordinator_update()
-
-    @property
-    def native_value(self) -> float:
-        return round(self._total, 4)
+        if description.register_hi is not None:
+            hi = self.coordinator.data.get(description.register_hi)
+            if hi is None:
+                return None
+            raw |= hi << 16
+        return description.convert(raw)

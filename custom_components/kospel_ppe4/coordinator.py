@@ -11,8 +11,10 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import KospelPPE4Client, KospelPPE4Error
 from .const import (
+    DAY_BLOCK_COUNT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    ENERGY_DAY_BLOCK_START,
     LIVE_BLOCK_COUNT,
     LIVE_BLOCK_START,
     PROFILE_COUNT,
@@ -22,6 +24,7 @@ from .const import (
     REG_SETPOINT,
     SETTINGS_BLOCK_COUNT,
     SETTINGS_BLOCK_START,
+    WATER_DAY_BLOCK_START,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -67,6 +70,8 @@ class KospelPPE4Coordinator(DataUpdateCoordinator[dict[int, int]]):
                     SETTINGS_BLOCK_START, SETTINGS_BLOCK_COUNT
                 )
             )
+            for start in (ENERGY_DAY_BLOCK_START, WATER_DAY_BLOCK_START):
+                data.update(await self.client.read_registers(start, DAY_BLOCK_COUNT))
         except KospelPPE4Error as err:
             raise UpdateFailed(f"Error communicating with heater: {err}") from err
         return data

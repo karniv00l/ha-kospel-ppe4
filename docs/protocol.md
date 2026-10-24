@@ -48,7 +48,7 @@ registers while hot water flowed:
 | 1135 | Tout | **Outlet (heated) water temp** | ÷10 °C | confirmed |
 | 1136 | — | Internal/ambient probe | ÷10 °C | likely |
 | 1138 | Aktualna moc | **Power draw (live)** | W | confirmed |
-| 1139 | Przepływ | **Flow rate** | ÷10 L/min | strong (energy balance) |
+| 1139 | Przepływ | **Flow rate** | ÷10 L/min | confirmed (reads ~12–25% high vs. counters) |
 | 1140 | — | Display/working temp copy | ÷10 °C | partial |
 | 1143 | — | Model/installed power | W | 24000 |
 | 1144 | Moc podgrzewacza | Configured heater power | W | confirmed (18000) |
@@ -71,13 +71,34 @@ Notes:
   you select a profile. This integration therefore treats the "active profile" as
   the one whose preset equals `1391`, and when you select a profile it copies that
   preset into `1391` so the choice actually takes effect.
-- **Daily/weekly/yearly energy (kWh) and water (l) totals** are shown on the
-  app's *Statystyki zużycia* screen (with cost in zł), but are **not** in the
-  polled register region — they appear to come from a separate history endpoint.
-  This integration instead derives running totals by integrating `1138`/`1139`
-  over time (Energy-dashboard compatible).
 - Many other registers in 1000–1440 carry schedule/config data and are not yet
   decoded (see `raw-register-dump.txt`).
+- The flow register `1139` reads about 12–25% high compared with the heater's
+  own water counters, so don't integrate it for volume. Use the counters
+  below.
+
+### Usage counters
+
+The app's *Statystyki zużycia* screen reads these blocks (captured with a
+proxy). Each block must be read **starting exactly at its first address**: a
+read that starts elsewhere comes back empty (`"res":}`), even if it overlaps.
+
+| Block | Read | Contents |
+|-------|------|----------|
+| Energy, daily | `GET /api/1448/30` | `1448`, `1449`: header (weekday, month); then 14 x 32-bit Wh |
+| Energy, monthly | `GET /api/1520/48` | 24 x 32-bit Wh, two registers per month from January |
+| Water, daily | `GET /api/1576/30` | `1576`, `1577`: header; then 14 x 32-bit values, x10 L |
+| Water, monthly | `GET /api/1648/48` | 24 x 32-bit values, x10 L, two registers per month from January |
+
+- 32-bit values are stored low word first: `value = lo | hi << 16`.
+- Daily slots run newest first: `1450`/`1451` = today, `1452`/`1453` = yesterday,
+  and so on. The app shows 7 days plus the previous week ("Poprzednio").
+- Verified on 2026-10-24: water `1578..1584` = 53, 857, 739, 717
+  (5.3 / 85.7 / 73.9 / 71.7 L, matching the app's Sat/Fri/Thu/Wed bars). October
+  totals `1538` = 9118 Wh and `1666` = 2366 (236.6 L) equal the sums of the
+  daily slots.
+- Month slots: October = `1520 + 2*9` = `1538`. Which year the second half of
+  each 48-register block holds hasn't been confirmed.
 
 ## Writing
 

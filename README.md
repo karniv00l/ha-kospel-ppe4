@@ -19,8 +19,9 @@ the LAN. No cloud, no account.
 
 - **Water heater** entity: outlet temperature + target (working) setpoint.
 - **Sensors**: intake (Tin) & outlet (Tout) water temperature, live power draw
-  (W), flow rate (l/min), plus derived **energy (kWh)** and **water (l)** totals
-  for the Home Assistant Energy dashboard.
+  (W), flow rate (l/min), plus the heater's own daily **energy (kWh)** and
+  **water (l)** counters (the same numbers as the app's statistics) for the
+  Home Assistant Energy dashboard.
 - **Active profile** selector (Profile 1–3) and editable **profile presets**.
 - Diagnostic sensors: internal temperature, installed / configured heater power.
 - Local polling every 15 s, no authentication required.
@@ -48,14 +49,17 @@ Or copy `custom_components/kospel_ppe4/` into your HA `config/custom_components/
 | Outlet temperature | 1135 | *Tout* (÷10 °C) |
 | Power | 1138 | Live draw (W) |
 | Flow rate | 1139 | ÷10 l/min |
-| Energy / Water | derived | Integrated from power/flow (kWh / l) |
+| Energy today | 1450–1451 | Heater's daily counter, Wh → kWh |
+| Water today | 1578–1579 | Heater's daily counter, ÷10 l |
 | Internal temperature | 1136 | Diagnostic (÷10 °C) |
 | Installed / heater power | 1143 / 1144 | W (diagnostic) |
 
 ## Energy & water usage
 
-The **Energy** (kWh) and **Water** (l) sensors are `total_increasing`, so Home
-Assistant can track usage over time.
+The **Energy today** (kWh) and **Water today** (l) sensors read the heater's
+own daily counters, so they match the app's *Statystyki zużycia* screen. They
+reset at midnight (heater clock) and are `total_increasing`, so Home Assistant
+treats each reset as a new cycle and keeps the long-term totals.
 
 - **Energy dashboard:** Settings → Dashboards → Energy → *Individual devices* →
   add **Kospel PPE4 Energy**. (Optional: add **Water** under the *Water* source.)
@@ -81,10 +85,6 @@ Assistant can track usage over time.
   ```
 
   This creates `sensor.ppe4_energy_daily`, `sensor.ppe4_water_monthly`, etc.
-
-> These totals are derived by integrating the live power (reg 1138) and flow
-> (reg 1139) at the 15 s poll interval, so very short draws may be slightly
-> under-counted compared to the app's own counters.
 
 ## Status
 
