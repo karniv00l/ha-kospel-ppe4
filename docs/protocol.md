@@ -96,10 +96,15 @@ Content-Type: application/json
 Notes:
 
 - Writes go to a dedicated `/api/write` endpoint — **not** `/api/<addr>`.
+- The body must be **compact JSON with no whitespace**. `{"1391": 450}` (note
+  the space) is rejected with `status_value` `-10`, "A character that is not
+  allowed was used."; `{"1391":450}` is accepted.
 - The official app sends the whole profile block in one request, e.g.
   `{"1390":0,"1391":340,"1392":420,"1393":450,"1394":500}`, but the firmware
   accepts any subset, so a single-register map works fine.
 - Success is `status:"OK"`; failures return `status:"ERROR"` with a negative
   `status_value` (observed: `-1` body present but unparseable for the old
-  per-address guess, `-2` no body, `-11` bad address, `-14` bad count).
-- Setpoint register is `1392 + active profile`; the active profile is `1390`.
+  per-address guess, `-2` no body, `-10` disallowed character / path of 10+
+  characters, `-11` bad address, `-14` bad count).
+- The heating target is `1391`; `1390` only highlights a profile (see the
+  register notes above).

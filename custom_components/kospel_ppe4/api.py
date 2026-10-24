@@ -97,13 +97,15 @@ class KospelPPE4Client:
             -> {"ver":"1.0","status":"OK","status_value":"0"}
 
         The firmware accepts a subset of registers, so a single-key map is fine.
+        It rejects any whitespace in the body (status -10, "A character that is
+        not allowed was used."), so the JSON must be compact.
         """
         body = {str(addr): int(value) & 0xFFFF for addr, value in values.items()}
         url = self._url("write")
         try:
             async with self._session.post(
                 url,
-                data=json.dumps(body),
+                data=json.dumps(body, separators=(",", ":")),
                 headers={"Content-Type": "application/json"},
                 timeout=self._timeout,
             ) as resp:
