@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -19,7 +20,7 @@ from homeassistant.const import (
     UnitOfVolume,
     UnitOfVolumeFlowRate,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import KospelPPE4ConfigEntry
@@ -48,6 +49,9 @@ class KospelSensorDescription(SensorEntityDescription):
     # For 32-bit values: the register holding the high word.
     register_hi: int | None = None
     convert: Callable[[int], float] = float
+    # Keep the last value (also across restarts) while the heater is
+    # unreachable, instead of going unavailable. See KospelPPE4CounterSensor.
+    hold_when_offline: bool = False
 
 
 def _deci(v: int) -> float:
@@ -110,6 +114,7 @@ SENSORS: tuple[KospelSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         state_class=SensorStateClass.TOTAL_INCREASING,
         suggested_display_precision=2,
+        hold_when_offline=True,
     ),
     KospelSensorDescription(
         key="water",
@@ -121,6 +126,7 @@ SENSORS: tuple[KospelSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfVolume.LITERS,
         state_class=SensorStateClass.TOTAL_INCREASING,
         suggested_display_precision=1,
+        hold_when_offline=True,
     ),
     KospelSensorDescription(
         key="internal_temp",
@@ -159,7 +165,12 @@ async def async_setup_entry(
 ) -> None:
     coordinator = entry.runtime_data
     async_add_entities(
-        KospelPPE4Sensor(coordinator, description) for description in SENSORS
+        (
+            KospelPPE4CounterSensor
+            if description.hold_when_offline
+            else KospelPPE4Sensor
+        )(coordinator, description)
+        for description in SENSORS
     )
 
 
@@ -179,6 +190,10 @@ class KospelPPE4Sensor(KospelPPE4Entity, SensorEntity):
 
     @property
     def native_value(self) -> float | None:
+        return self._read()
+
+    def _read(self) -> float | None:
+        """Decode the current value from the latest poll."""
         description = self.entity_description
         raw = self.coordinator.data.get(description.register)
         if raw is None or raw in MARKER_UNUSED:
@@ -189,3 +204,44 @@ class KospelPPE4Sensor(KospelPPE4Entity, SensorEntity):
                 return None
             raw |= hi << 16
         return description.convert(raw)
+
+
+class KospelPPE4CounterSensor(KospelPPE4Sensor, RestoreSensor):
+    """A usage counter that holds its last value while the heater is offline.
+
+    People cut the heater's power when they're away. If the counter went
+    unavailable for longer than the recorder keeps short-term statistics
+    (10 days by default), Home Assistant would restart its long-term sum at 0
+    and chart the whole history as one big negative day. A heater with no
+    power uses nothing, so a flat value is also the truthful one. When it comes
+    back on a later day, the counter starts low again, which
+    TOTAL_INCREASING treats as a normal daily reset.
+    """
+
+    _last_value: float | None = None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if self.coordinator.last_update_success:
+            self._last_value = self._read()
+        if self._last_value is None and (
+            last := await self.async_get_last_sensor_data()
+        ) is not None:
+            try:
+                self._last_value = float(last.native_value)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                pass
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        if self.coordinator.last_update_success and (value := self._read()) is not None:
+            self._last_value = value
+        super()._handle_coordinator_update()
+
+    @property
+    def available(self) -> bool:
+        return self._last_value is not None
+
+    @property
+    def native_value(self) -> float | None:
+        return self._last_value

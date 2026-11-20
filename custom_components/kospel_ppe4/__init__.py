@@ -29,7 +29,10 @@ async def async_setup_entry(
     client = KospelPPE4Client(entry.data[CONF_HOST], session)
     coordinator = KospelPPE4Coordinator(hass, entry, client)
 
-    await coordinator.async_config_entry_first_refresh()
+    # Set up even when the heater is unreachable: people cut its power when
+    # they're away. Entities show as unavailable until it answers, except the
+    # usage counters, which keep their last value (see sensor.py).
+    await coordinator.async_refresh()
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

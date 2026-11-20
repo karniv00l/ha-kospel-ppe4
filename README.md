@@ -88,6 +88,13 @@ treats each reset as a new cycle and keeps the long-term totals.
 
   This creates `sensor.ppe4_energy_daily`, `sensor.ppe4_water_monthly`, etc.
 
+**Switching the heater off.** It's fine to cut the heater's power when you're
+away. While it's unreachable, *Energy today* and *Water today* keep their last
+value (a heater with no power uses nothing), so the Energy dashboard and
+utility meters see zero usage instead of a gap. The integration also starts
+normally if Home Assistant restarts while the heater is off. The other
+entities show as unavailable until it's back.
+
 ## Status
 
 - **Reading: fully working and validated** against hardware.
@@ -102,8 +109,14 @@ treats each reset as a new cycle and keeps the long-term totals.
   should return `"status":"OK"`. Check the IP, and any VLAN/firewall between HA
   and the heater.
 - **Heater IP keeps changing** — set a static DHCP lease for it on your router.
-- **Entities show "unavailable"** — the module dropped off Wi-Fi; it recovers on
-  the next successful poll. Check the heater's Wi-Fi signal icon in the app.
+- **Entities show "unavailable"** — the heater is off or the module dropped
+  off Wi-Fi; it recovers on the next successful poll. Check the heater's Wi-Fi
+  signal icon in the app.
+- **A big negative day in energy/water statistics** — with version 0.1.3 or
+  older, if the heater was off for more than 10 days, Home Assistant restarted
+  its long-term totals at 0. Fix the bad hour in *Developer Tools → Statistics*
+  (*Adjust sum*) for each affected sensor and utility meter. 0.1.4 and newer
+  avoid it.
 - **No brand icon on the device page** — the icon ships inside the integration
   (`custom_components/kospel_ppe4/brand/`) and needs Home Assistant **2026.3.0
   or newer**; on older versions the icon is simply absent (cosmetic only). See

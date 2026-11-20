@@ -21,7 +21,6 @@ from .const import (
     PROFILE_MANUAL,
     REG_ACTIVE_PROFILE,
     REG_PROFILE_BASE,
-    REG_SERIAL_SUFFIX,
     REG_SETPOINT,
     SETTINGS_BLOCK_COUNT,
     SETTINGS_BLOCK_START,
@@ -48,17 +47,9 @@ class KospelPPE4Coordinator(DataUpdateCoordinator[dict[int, int]]):
             config_entry=entry,
         )
         self.client = client
-        self._serial: str | None = None
-
-    async def _async_setup(self) -> None:
-        """Read one-shot identity data at startup."""
-        try:
-            regs = await self.client.read_registers(REG_SERIAL_SUFFIX, 1)
-        except KospelPPE4Error as err:
-            raise UpdateFailed(f"Error reading identity: {err}") from err
-        suffix = regs.get(REG_SERIAL_SUFFIX)
-        if suffix is not None:
-            self._serial = f"ppe4_{suffix:08d}"
+        # Empty until the first successful poll, so entities can be created
+        # while the heater is offline.
+        self.data = {}
 
     async def _async_update_data(self) -> dict[int, int]:
         try:
@@ -81,7 +72,9 @@ class KospelPPE4Coordinator(DataUpdateCoordinator[dict[int, int]]):
 
     @property
     def serial(self) -> str:
-        return self._serial or f"ppe4_{self.client.host}"
+        # The config flow stores the heater's serial (ppe4_000XXXXX) as the
+        # entry's unique ID.
+        return self.config_entry.unique_id or f"ppe4_{self.client.host}"
 
     @property
     def active_profile(self) -> int | None:
