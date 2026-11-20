@@ -4,6 +4,24 @@ All notable changes to this integration are documented here. The format is
 based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project uses [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] - 2026-11-20
+
+### Fixed
+
+- **Negative energy and water days after a long power-off.** While the heater
+  was unreachable, *Energy today* and *Water today* went unavailable. After
+  more than 10 days (the recorder's default `purge_keep_days`), Home
+  Assistant lost the running total, restarted it at 0, and charted the whole
+  history as one large negative day, both on the sensors and on utility
+  meters built from them. The two counters now keep their last value while
+  the heater is offline, including across Home Assistant restarts.
+- **The integration failed to start while the heater was off** and retried
+  in the background. It now starts anyway and shows the other entities as
+  unavailable until the heater answers.
+
+If your statistics already show a negative day, see *Troubleshooting* in the
+README to correct it.
+
 ## [0.1.3] - 2026-10-24
 
 ### Fixed
@@ -65,6 +83,7 @@ First HACS release.
 
 Initial version (not released).
 
+[0.1.4]: https://github.com/karniv00l/ha-kospel-ppe4/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/karniv00l/ha-kospel-ppe4/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/karniv00l/ha-kospel-ppe4/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/karniv00l/ha-kospel-ppe4/releases/tag/v0.1.1
